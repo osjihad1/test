@@ -27,7 +27,7 @@ def status():
         "nonce": data.get('nonce', ''),
         "server_ts": str(int(time.time() * 1000))
     }
-    response_data['sig'] = generate_signature(response_data, SECRET_KEY)
+    #response_data['sig'] = generate_signature(response_data, SECRET_KEY)
     return jsonify(response_data)
 
 @app.route('/api/check', methods=['GET', 'POST'])
