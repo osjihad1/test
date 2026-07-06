@@ -4,19 +4,21 @@ import hashlib
 import time
 
 app = Flask(__name__)
-
-# আপনার DLL বা EXE যদি রেসপন্সের সিগনেচার চেক করে, তবে এই কীটি আসল কী হতে হবে।
-# যদি না চেক করে, যেকোনো কী দিলেই চলবে।
 SECRET_KEY = "RENDER_SECRET_KEY_123"
 
 def generate_signature(data_dict, secret):
     raw = f"{data_dict.get('key','')}{data_dict.get('hwid','')}{data_dict.get('nonce','')}{data_dict.get('ts','')}{secret}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
-@app.route('/api/status', methods=['POST'])
+# 🔴 এখানে methods=['GET', 'POST'] করে দিয়েছি, যাতে ব্রাউজারেও কাজ করে
+@app.route('/api/status', methods=['GET', 'POST'])
 def status():
-    data = request.json
-    resp = {
+    if request.method == 'GET':
+        data = {}  # GET রিকোয়েস্টের জন্য ডামি ডাটা
+    else:
+        data = request.json
+        
+    response_data = {
         "status": "success",
         "message": "OK",
         "free_mode": False,
@@ -25,13 +27,17 @@ def status():
         "nonce": data.get('nonce', ''),
         "server_ts": str(int(time.time() * 1000))
     }
-    resp['sig'] = generate_signature(resp, SECRET_KEY)
-    return jsonify(resp)
+    response_data['sig'] = generate_signature(response_data, SECRET_KEY)
+    return jsonify(response_data)
 
-@app.route('/api/check', methods=['POST'])
+@app.route('/api/check', methods=['GET', 'POST'])
 def check():
-    data = request.json
-    resp = {
+    if request.method == 'GET':
+        data = {}
+    else:
+        data = request.json
+        
+    response_data = {
         "status": "success",
         "message": "Access Granted",
         "free_mode": False,
@@ -40,10 +46,9 @@ def check():
         "nonce": data.get('nonce', ''),
         "server_ts": str(int(time.time() * 1000))
     }
-    resp['sig'] = generate_signature(resp, SECRET_KEY)
-    return jsonify(resp)
+    response_data['sig'] = generate_signature(response_data, SECRET_KEY)
+    return jsonify(response_data)
 
 if __name__ == '__main__':
-    # Render নিজে পোর্ট দেবে (যেমন 10000), তাই os.environ.get('PORT') ব্যবহার করা আবশ্যক
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port)
